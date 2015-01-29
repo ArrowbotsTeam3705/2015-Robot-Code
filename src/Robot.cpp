@@ -79,7 +79,6 @@ public:
 		while (IsOperatorControl() && IsEnabled())
 		{
 			myRobot.ArcadeDrive(controller); // drive with arcade style (use left stick)
-			//forkLift.Set(rightStick.GetY());//adjust speed of the forkLift using the right joystick
 			if((controller.GetRawAxis(3)>0.1)&&timerSet==false){
 				forwardsPulley();
 			}
