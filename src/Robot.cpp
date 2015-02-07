@@ -1,6 +1,9 @@
 #include "WPILib.h"
-#include "math.h"
+#include <string>
 
+using std::string;
+
+//Written by Javed Nissar with some help from Fayaad/Jay/Harry
 /**
  * This is a demo program showing the use of the RobotDrive class.
  * The SampleRobot class is the base of a robot application that will automatically call your
@@ -11,44 +14,46 @@
  * don't. Unless you know what you are doing, complex code will be much more difficult under
  * this system. Use IterativeRobot or Command-Based instead if you're new.
  */
+/*
+If you are at any point disturbed by the code below, please stare at
+the safety pig.
+                         _
+ _._ _..._ .-',     _.._(`))
+'-. `     '  /-._.-'    ',/
+   )         \            '.
+  / _    _    |             \
+ |  a    a    /              |
+ \   .-.                     ;
+  '-('' ).-'       ,'       ;
+     '-;           |      .'
+        \           \    /
+        | 7  .__  _.-\   \
+        | |  |  ``/  /`  /
+       /,_|  |   /,_/   /
+          /,_/      '`-'
+*/
 class Robot: public SampleRobot
 {
 	RobotDrive myRobot; // robot drive system
-	//Joystick leftStick; // joystick 1
-	//Joystick rightStick;//joystick 2
 	Joystick controller;
 	Talon forkLift;
 	Solenoid leftHook;
 	Solenoid rightHook;
-	DigitalInput limitSwitch;
-	Timer pulleyTimer;
 	Timer pneumaticTimer;
-	bool forkLiftForward;
-	bool forkLiftBackward;
-	bool timerSet;
 	unsigned int secondsForPulley;
 	double secondsForPneumatic;
 
-	//DoubleSolenoid leftHook;
-	//DoubleSolenoid rightHook;
 public:
 	Robot() :
 			myRobot(0, 1),	// these must be initialized in the same order
 			controller(0),
 			forkLift(2),
 			leftHook(0),
-			rightHook(1),// as they are declared above.
-			limitSwitch(0)
-			//leftHook(1,2),
-			//rightHook(3,4)
+			rightHook(1)// as they are declared above.
 	{
 		myRobot.SetExpiration(0.1);
-		forkLiftForward=false;
-		forkLiftBackward=false;
-		timerSet=false;
 		secondsForPulley=5;
-		//microseconds is in microseconds so to get 5 seconds we do 5*(10^6)
-		secondsForPneumatic=1;
+		secondsForPneumatic=0.5;
 	}
 
 	/**
@@ -74,34 +79,52 @@ public:
 	void stopPulley(){
 		forkLift.Set(0);
 	}
+	string CanHooksBeMoved(){
+		if(pneumaticTimer.Get()>0){
+			return "No";
+		}else{
+			return "Yes";
+		}
+	}
 	void OperatorControl()
 	{
 		myRobot.SetSafetyEnabled(true);
 		while (IsOperatorControl() && IsEnabled())
 		{
-			myRobot.ArcadeDrive(controller,false); // drive with arcade style (use left stick) without squared inputs
-			if((controller.GetRawAxis(3)>0.1)&&timerSet==false){
+			myRobot.ArcadeDrive(controller,false); // drive with arcade style (use left stick of controller) without squared inputs
+			/*when you move the right stick of controller upwards, the pulley will move upwards
+			 *the motor of the pulley will be at 75% forwards
+			 *the need for it to be above 0.1 is to accommodate the drift of the right stick of the controller (joystick value is never 0)
+			 */
+			if(controller.GetRawAxis(3)>0.1){
 				forwardsPulley();
 			}
-			else if((controller.GetRawAxis(3)<-0.1)&&timerSet==false){
+			/*
+			 * when you move right stick of controller downwards, the pulley will move downwards
+			 * the motor of the pulley will be at 50% reverse
+			 */
+			else if(controller.GetRawAxis(3)<-0.1){
 				backwardsPulley();
 			}
-			else if(timerSet==false){
+			//when right stick of controller is left alone, motor will not exert force on pulley; thus, causing the pulley to drift downwards.
+			else{
 				stopPulley();
 			}
-			SmartDashboard::PutBoolean("Is Pulley Timer Set?",timerSet);
-			SmartDashboard::PutBoolean("Is Pneumatic Timer Started?",(pneumaticTimer.Get()>0));
-			//if button 3 on the controller is pressed and the timer on the pneumatic is not running
-			if(controller.GetRawButton(3)&&!(pneumaticTimer.Get()>0)){
+			//provide status on whether or not hooks can be moved
+			SmartDashboard::PutString("Can I press right trigger to move hooks",CanHooksBeMoved());
+			//if button 8 on the controller is pressed (the right trigger on Maninder's red controller) and the timer on the pneumatic is not active
+			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
+			if(controller.GetRawButton(8)&&!(pneumaticTimer.Get()>0)){
 				if(leftHook.Get()){
 					leftHook.Set(false);
-					rightHook.Set(false);	//disables the solenoid output
+					rightHook.Set(false);	//moves left hook and right hook back to default position
 				}else{
-					leftHook.Set(true);		//enables the leftHook and the rightHook
+					leftHook.Set(true);		//moves left hook and right hook forwards
 					rightHook.Set(true);
 				}
 				pneumaticTimer.Start();
 			}else if(pneumaticTimer.Get()>secondsForPneumatic){
+				//stop and reset timer to enable buttons to operate
 				pneumaticTimer.Stop();
 				pneumaticTimer.Reset();
 			}
