@@ -94,6 +94,7 @@ class Robot: public SampleRobot
 	Timer pneumaticTimer;
 	unsigned int secondsForPulley;
 	double secondsForPneumatic;
+	bool inverted;
 
 public:
 	Robot() :
@@ -104,6 +105,7 @@ public:
 			rightHook(1)// as they are declared above.
 	{
 		myRobot.SetExpiration(0.1);
+		inverted=false;
 		secondsForPulley=5;
 		secondsForPneumatic=0.5;
 	}
@@ -143,7 +145,20 @@ public:
 		myRobot.SetSafetyEnabled(true);
 		while (IsOperatorControl() && IsEnabled())
 		{
-			myRobot.ArcadeDrive(controller,false); // drive with arcade style (use left stick of controller) without squared inputs
+			//if inverted, then invert drive and if not inverted, then don't
+			if(inverted){
+				myRobot.ArcadeDrive(controller.GetY(),-controller.GetX());
+			}else{
+				myRobot.ArcadeDrive(-controller.GetY(),controller.GetX()); // drive with arcade style (use left stick of controller) without squared inputs
+			}
+			//if button 7 on controller is pressed (left trigger on Maninder's controller), make controller inverted if it is not inverted and not inverted if it is inverted
+			if(controller.GetRawButton(7)){
+				if(inverted){
+					inverted=false;
+				}else{
+					inverted=true;
+				}
+			}
 			/*when you move the right stick of controller upwards, the pulley will move upwards
 			 *the motor of the pulley will be at 75% forwards
 			 *the need for it to be above 0.1 is to accommodate the drift of the right stick of the controller (joystick value is never 0)
@@ -164,6 +179,8 @@ public:
 			}
 			//provide status on whether or not hooks can be moved
 			SmartDashboard::PutString("Can I press right trigger to move hooks",CanHooksBeMoved());
+			//provide status on whether or not controls are inverted
+			SmartDashboard::PutBoolean("inverted",inverted);
 			//if button 8 on the controller is pressed (the right trigger on Maninder's red controller) and the timer on the pneumatic is not active
 			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
 			if(controller.GetRawButton(8)&&!(pneumaticTimer.Get()>0)){
