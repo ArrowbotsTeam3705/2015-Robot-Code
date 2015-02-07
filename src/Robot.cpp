@@ -21,12 +21,13 @@ class Robot: public SampleRobot
 	Solenoid leftHook;
 	Solenoid rightHook;
 	DigitalInput limitSwitch;
-	Timer timer;
+	Timer pulleyTimer;
+	Timer pneumaticTimer;
 	bool forkLiftForward;
 	bool forkLiftBackward;
 	bool timerSet;
-	unsigned int seconds;
-	unsigned long microseconds;
+	unsigned int secondsForPulley;
+	double secondsForPneumatic;
 
 	//DoubleSolenoid leftHook;
 	//DoubleSolenoid rightHook;
@@ -45,9 +46,9 @@ public:
 		forkLiftForward=false;
 		forkLiftBackward=false;
 		timerSet=false;
-		seconds=5;
+		secondsForPulley=5;
 		//microseconds is in microseconds so to get 5 seconds we do 5*(10^6)
-		microseconds=seconds*pow(10.0,6.0);
+		secondsForPneumatic=1;
 	}
 
 	/**
@@ -78,7 +79,7 @@ public:
 		myRobot.SetSafetyEnabled(true);
 		while (IsOperatorControl() && IsEnabled())
 		{
-			myRobot.ArcadeDrive(controller); // drive with arcade style (use left stick)
+			myRobot.ArcadeDrive(controller,false); // drive with arcade style (use left stick) without squared inputs
 			if((controller.GetRawAxis(3)>0.1)&&timerSet==false){
 				forwardsPulley();
 			}
@@ -88,49 +89,10 @@ public:
 			else if(timerSet==false){
 				stopPulley();
 			}
-			if(controller.GetRawButton(2)&&timerSet==false){
-				forwardsPulley();
-				timerSet=true;
-				timer.Start();
-				//forkLiftForward=true;
-			}
-			if(controller.GetRawButton(1)&&timerSet==false){
-				backwardsPulley();
-				timer.Start();
-				timerSet=true;
-			}
-			if(timerSet==true&&timer.Get()>seconds){
-				timer.Stop();
-				timer.Reset();
-				stopPulley();
-				timerSet=false;
-			}
-			/*if(leftStick.GetRawButton(4)){
-				forkLiftForward=true;
-				if(forkLiftBackward==true){
-					forkLiftBackward=false;
-				}
-			}
-			if(leftStick.GetRawButton(5)){
-				forkLiftBackward=true;
-				if(forkLiftForward==true){
-					forkLiftForward=false;
-				}
-			}
-			if(leftStick.GetRawButton(2)){
-				forkLiftForward=false;
-				forkLiftBackward=false;
-			}
-			if(forkLiftForward==true&&forkLiftBackward==false){
-				forkLift.Set(0.75);
-			}
-			if(forkLiftBackward==true&&forkLiftForward==false){
-				forkLift.Set(-0.5);
-			}
-			if(forkLiftForward==false&&forkLiftBackward==false){
-				forkLift.Set(0);
-			}*/
-			if(controller.GetRawButton(3)){
+			SmartDashboard::PutBoolean("Is Pulley Timer Set?",timerSet);
+			SmartDashboard::PutBoolean("Is Pneumatic Timer Started?",(pneumaticTimer.Get()>0));
+			//if button 3 on the controller is pressed and the timer on the pneumatic is not running
+			if(controller.GetRawButton(3)&&!(pneumaticTimer.Get()>0)){
 				if(leftHook.Get()){
 					leftHook.Set(false);
 					rightHook.Set(false);	//disables the solenoid output
@@ -138,32 +100,11 @@ public:
 					leftHook.Set(true);		//enables the leftHook and the rightHook
 					rightHook.Set(true);
 				}
+				pneumaticTimer.Start();
+			}else if(pneumaticTimer.Get()>secondsForPneumatic){
+				pneumaticTimer.Stop();
+				pneumaticTimer.Reset();
 			}
-			/*while (limitSwitch.Get())
-			{
-				Wait(0.005);
-				if ((limitSwitch.Get())>0)
-				{
-					leftHook.Set(0.5);
-					// exampleLed.Set(1);
-				}
-				else
-				{
-					leftHook.Set(0.5);
-				}
-			}*/
-			  /*if(rightStick.GetRawButton(3)){
-			  	leftHook.Set(DoubleSolenoid::kForward);	//make the solenoids go forward
-			  	rightHook.Set(DoubleSolenoid::kForward);
-			  }
-			  else if(rightStick.GetRawButton(4)){
-			  	leftHook.Set(DoubleSolenoid::kReverse);	//make the solenoids go back
-			  	rightHook.Set(DoubleSolenoid::kReverse);
-			  }
-			  else{
-			  	leftHook.Set(DoubleSolenoid::kOff);		//turn the solenoid off
-			  	rightHook.Set(DoubleSolenoid::kOff);
-			  }*/
 			Wait(0.005);			// wait for a motor update time
 		}
 	}
