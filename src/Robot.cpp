@@ -3,7 +3,7 @@
 
 using std::string;
 
-//Written by Javed Nissar with some help from Fayaad/Jay/Harry
+//Written by Javed Nissar and Jay with some help from Fayaad/Harry
 /**
  * This is a demo program showing the use of the RobotDrive class.
  * The SampleRobot class is the base of a robot application that will automatically call your
@@ -149,10 +149,10 @@ public:
 			if(inverted){
 				myRobot.ArcadeDrive(controller.GetY(),-controller.GetX());
 			}else{
-				myRobot.ArcadeDrive(-controller.GetY(),controller.GetX()); // drive with arcade style (use left stick of controller) without squared inputs
+				myRobot.ArcadeDrive(-controller.GetY(),-controller.GetX()); // drive with arcade style (use left stick of controller) without squared inputs
 			}
 			//if button 7 on controller is pressed (left trigger on Maninder's controller), make controller inverted if it is not inverted and not inverted if it is inverted
-			if(controller.GetRawButton(7)){
+			if(controller.GetRawButton(13)){
 				if(inverted){
 					inverted=false;
 				}else{
