@@ -100,6 +100,7 @@ class Robot: public SampleRobot
 	//counters measuring the number of times the limit switch has been hit
 	Counter topCounter;
 	Counter bottomCounter;
+	Joystick forkLiftControl;
 	//amount of time that must occur between inputs for pneumatic
 	double secondsForPneumatic;
 	//boolean controlling whether or not robot is inverted
@@ -116,7 +117,8 @@ public:
 			bottomSwitch(0),
 			//limit switches must be passed to counter as pointers
 			topCounter(&topSwitch),
-			bottomCounter(&bottomSwitch)// as they are declared above.
+			bottomCounter(&bottomSwitch),
+			forkLiftControl(1)// as they are declared above.
 	{
 		myRobot.SetExpiration(0.1);
 		inverted=false;
@@ -160,9 +162,9 @@ public:
 		{
 			//if inverted, then invert drive and if not inverted, then don't
 			if(inverted){
-				myRobot.ArcadeDrive(controller.GetY(),controller.GetX());
+				myRobot.ArcadeDrive(controller.GetY(),controller.GetZ());
 			}else{
-				myRobot.ArcadeDrive(-controller.GetY(),-controller.GetX()); // drive with arcade style (use left stick of controller) without squared inputs
+				myRobot.ArcadeDrive(-controller.GetY(),-controller.GetZ()); // drive with arcade style (use left stick of controller) without squared inputs
 			}
 			//if button 7 on controller is pressed (left trigger on Maninder's controller), make controller inverted if it is not inverted and not inverted if it is inverted
 			if(controller.GetRawButton(13)){
@@ -176,16 +178,16 @@ public:
 			 *the motor of the pulley will be at 75% forwards. The top switch must not be triggered in order to prevent any damage from being done to the robot.
 			 *the need for it to be above 0.1 is to accommodate the drift of the right stick of the controller (joystick value is never 0)
 			 */
-			if((controller.GetRawAxis(3)>0.1)&&(topCounter.Get()==0)){
-				forwardsPulley();
+			if((forkLiftControl.GetY()>0.1)&&(topCounter.Get()==0)){
+				forkLift.Set(forkLiftControl.GetY());
 				bottomCounter.Reset();
 			}
 			/*
 			 * when you move right stick of controller downwards and the bottom switch has not been triggered, the pulley will move downwards
 			 * the motor of the pulley will be at 50% reverse. The bottom switch must not be triggered in order to prevent any damage from being done to the robot.
 			 */
-			else if((controller.GetRawAxis(3)<-0.1)&&(bottomCounter.Get()==0)){
-				backwardsPulley();
+			else if((forkLiftControl.GetY()<-0.1)&&(bottomCounter.Get()==0)){
+				forkLift.Set(forkLiftControl.GetY());
 				topCounter.Reset();
 			}
 			//when right stick of controller is left alone, motor will not exert force on pulley; thus, causing the pulley to drift downwards.
@@ -200,7 +202,7 @@ public:
 			SmartDashboard::PutBoolean("inverted",inverted);
 			//if button 8 on the controller is pressed (the right trigger on Maninder's red controller) and the timer on the pneumatic is not active
 			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
-			if(controller.GetRawButton(8)&&!(pneumaticTimer.Get()>0)){
+			if(forkLiftControl.GetRawButton(3)&&!(pneumaticTimer.Get()>0)){
 				if(leftHook.Get()){
 					leftHook.Set(false);
 					rightHook.Set(false);	//moves left hook and right hook back to default position
