@@ -3,7 +3,7 @@
 
 using std::string;
 
-//Written by Javed Nissar and Jay with some help from Fayaad/Harry
+//Written by Javed Nissar with some help from Fayaad/Harry/Gorgin/Jay
 /**
  * This is a demo program showing the use of the RobotDrive class.
  * The SampleRobot class is the base of a robot application that will automatically call your
@@ -87,13 +87,22 @@ using std::string;
 class Robot: public SampleRobot
 {
 	RobotDrive myRobot; // robot drive system
-	Joystick controller;
-	Talon forkLift;
+	Joystick controller; //gamepad used for controlling robot
+	Talon forkLift; //Talon motor that controls forkLift
+	//pneumatic solenoids for controlling two hooks
 	Solenoid leftHook;
 	Solenoid rightHook;
+	//timer that ensures that input is not processed too quickly
 	Timer pneumaticTimer;
-	unsigned int secondsForPulley;
+	//two limit switches that act as endpoints for the robot
+	DigitalInput topSwitch;
+	DigitalInput bottomSwitch;
+	//counters measuring the number of times the limit switch has been hit
+	Counter topCounter;
+	Counter bottomCounter;
+	//amount of time that must occur between inputs for pneumatic
 	double secondsForPneumatic;
+	//boolean controlling whether or not robot is inverted
 	bool inverted;
 
 public:
@@ -102,11 +111,15 @@ public:
 			controller(0),
 			forkLift(2),
 			leftHook(0),
-			rightHook(1)// as they are declared above.
+			rightHook(1),
+			topSwitch(1),
+			bottomSwitch(0),
+			//limit switches must be passed to counter as pointers
+			topCounter(&topSwitch),
+			bottomCounter(&bottomSwitch)// as they are declared above.
 	{
 		myRobot.SetExpiration(0.1);
 		inverted=false;
-		secondsForPulley=5;
 		secondsForPneumatic=0.5;
 	}
 
@@ -147,7 +160,7 @@ public:
 		{
 			//if inverted, then invert drive and if not inverted, then don't
 			if(inverted){
-				myRobot.ArcadeDrive(controller.GetY(),-controller.GetX());
+				myRobot.ArcadeDrive(controller.GetY(),controller.GetX());
 			}else{
 				myRobot.ArcadeDrive(-controller.GetY(),-controller.GetX()); // drive with arcade style (use left stick of controller) without squared inputs
 			}
@@ -159,24 +172,28 @@ public:
 					inverted=true;
 				}
 			}
-			/*when you move the right stick of controller upwards, the pulley will move upwards
-			 *the motor of the pulley will be at 75% forwards
+			/*when you move the right stick of controller upwards and the top switch has not been triggered, the pulley will move upwards
+			 *the motor of the pulley will be at 75% forwards. The top switch must not be triggered in order to prevent any damage from being done to the robot.
 			 *the need for it to be above 0.1 is to accommodate the drift of the right stick of the controller (joystick value is never 0)
 			 */
-			if(controller.GetRawAxis(3)>0.1){
+			if((controller.GetRawAxis(3)>0.1)&&(topCounter.Get()==0)){
 				forwardsPulley();
+				bottomCounter.Reset();
 			}
 			/*
-			 * when you move right stick of controller downwards, the pulley will move downwards
-			 * the motor of the pulley will be at 50% reverse
+			 * when you move right stick of controller downwards and the bottom switch has not been triggered, the pulley will move downwards
+			 * the motor of the pulley will be at 50% reverse. The bottom switch must not be triggered in order to prevent any damage from being done to the robot.
 			 */
-			else if(controller.GetRawAxis(3)<-0.1){
+			else if((controller.GetRawAxis(3)<-0.1)&&(bottomCounter.Get()==0)){
 				backwardsPulley();
+				topCounter.Reset();
 			}
 			//when right stick of controller is left alone, motor will not exert force on pulley; thus, causing the pulley to drift downwards.
 			else{
 				stopPulley();
 			}
+			SmartDashboard::PutNumber("Top switch",topCounter.Get());
+			SmartDashboard::PutNumber("Bottom switch",bottomCounter.Get());
 			//provide status on whether or not hooks can be moved
 			SmartDashboard::PutString("Can I press right trigger to move hooks",CanHooksBeMoved());
 			//provide status on whether or not controls are inverted
