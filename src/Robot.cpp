@@ -3,7 +3,6 @@
 
 using std::string;
 
-//Written by Javed Nissar with some help from Fayaad/Harry/Gorgin/Jay
 /**
  * This is a demo program showing the use of the RobotDrive class.
  * The SampleRobot class is the base of a robot application that will automatically call your
@@ -97,15 +96,19 @@ class Robot: public SampleRobot
 	//two limit switches that act as endpoints for the robot
 	DigitalInput topSwitch;
 	DigitalInput bottomSwitch;
+	DigitalInput middleSwitch;
 	//counters measuring the number of times the limit switch has been hit
 	Counter topCounter;
 	Counter bottomCounter;
+	Counter middleCounter;
+	DigitalOutput spotIndicator;
 	Joystick forkLiftControl;
 	//amount of time that must occur between inputs for pneumatic
 	double secondsForPneumatic;
 	//boolean controlling whether or not robot is inverted
 	bool inverted;
-
+	int previousMiddleCount;
+	int middleCount;
 public:
 	Robot() :
 			myRobot(0, 1),	// these must be initialized in the same order
@@ -115,14 +118,18 @@ public:
 			rightHook(1),
 			topSwitch(1),
 			bottomSwitch(0),
+			middleSwitch(2),
 			//limit switches must be passed to counter as pointers
 			topCounter(&topSwitch),
 			bottomCounter(&bottomSwitch),
+			middleCounter(&middleSwitch),
+			spotIndicator(3),
 			forkLiftControl(1)// as they are declared above.
 	{
 		myRobot.SetExpiration(0.1);
 		inverted=false;
 		secondsForPneumatic=0.5;
+		previousMiddleCount=0;
 	}
 
 	/**
@@ -160,6 +167,7 @@ public:
 		myRobot.SetSafetyEnabled(true);
 		while (IsOperatorControl() && IsEnabled())
 		{
+			middleCount=middleCounter.Get();
 			//if inverted, then invert drive and if not inverted, then don't
 			if(inverted){
 				myRobot.ArcadeDrive(controller.GetY(),controller.GetZ());
@@ -190,19 +198,23 @@ public:
 				forkLift.Set(forkLiftControl.GetY());
 				topCounter.Reset();
 			}
+
 			//when right stick of controller is left alone, motor will not exert force on pulley; thus, causing the pulley to drift downwards.
 			else{
 				stopPulley();
 			}
 			SmartDashboard::PutNumber("Top switch",topCounter.Get());
+			SmartDashboard::PutNumber("Middle count",middleCount);
+			SmartDashboard::PutNumber("Previous middle count",previousMiddleCount);
 			SmartDashboard::PutNumber("Bottom switch",bottomCounter.Get());
+
 			//provide status on whether or not hooks can be moved
 			SmartDashboard::PutString("Can I press right trigger to move hooks",CanHooksBeMoved());
 			//provide status on whether or not controls are inverted
 			SmartDashboard::PutBoolean("inverted",inverted);
 			//if button 8 on the controller is pressed (the right trigger on Maninder's red controller) and the timer on the pneumatic is not active
 			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
-			if(forkLiftControl.GetRawButton(3)&&!(pneumaticTimer.Get()>0)){
+			if(controller.GetRawButton(8)&&!(pneumaticTimer.Get()>0)){
 				if(leftHook.Get()){
 					leftHook.Set(false);
 					rightHook.Set(false);	//moves left hook and right hook back to default position
@@ -216,6 +228,11 @@ public:
 				pneumaticTimer.Stop();
 				pneumaticTimer.Reset();
 			}
+			if(middleCount>previousMiddleCount){
+				spotIndicator.Pulse(0.0016);
+			}
+			previousMiddleCount=middleCount;
+			//Indicators when the forklift is at its "soft spot" (Not Sure which LimitSwitch)
 			Wait(0.005);			// wait for motor update time
 		}
 	}
