@@ -13,7 +13,7 @@ using std::string;
  * don't. Unless you know what you are doing, complex code will be much more difficult under
  * this system. Use IterativeRobot or Command-Based instead if you're new.
  */
-//Author Name:Javed Nissar
+//Author Name:Javed Nissar and my partner in crime, 3K (Kavinda KK)
 //Purpose:Classified
 //Date:February 13,2070
 /*
@@ -103,7 +103,7 @@ class Robot: public SampleRobot
 	Counter topCounter;
 	Counter bottomCounter;
 	Encoder encoder;
-	Joystick forkLiftControl;
+	Joystick forkLiftControl;                                                                                                                                                                          //Lol, Jesus does water tricks
 	Relay indicator;
 	//Jawad was here
 	//amount of time that must occur between inputs for pneumatic
@@ -168,7 +168,7 @@ public:
 		myRobot.SetSafetyEnabled(true);
 		while (IsOperatorControl() && IsEnabled())
 		{
-			//tell the robot whether or not you have a tote when you press button 3 on the joystick
+			//tell the robot whether or not you have a tote when you press button 3 on the joystick                                                                                                                                                                                                      //veni,vidi,vici
 			if(forkLiftControl.GetRawButton(3)){
 				if(doesRobotHaveTote){
 					doesRobotHaveTote=false;
@@ -178,10 +178,9 @@ public:
 				}else{
 					//tell the counter to start updating again
 					doesRobotHaveTote=true;
-					topCounter.SetUpdateWhenEmpty(false);
 				}
 			}
-			//if the robot has a tote and the middle counter has been hit, then flash the indicator
+			//if the robot has a tote and the top counter has been hit, then flash the indicator
 			if(doesRobotHaveTote&&(topCounter.Get()>0)){
 				indicator.Set(Relay::kForward);
 			}
@@ -220,10 +219,11 @@ public:
 			else{
 				stopPulley();
 			}
-
+			//states number of times the switch on top of the forklift has been activated
 			SmartDashboard::PutNumber("Top switch",topCounter.Get());
 			//SmartDashboard::PutBoolean("Does robot have a tote?",doesRobotHaveTote);
 			SmartDashboard::PutBoolean("Indicator",doesRobotHaveTote&&(topCounter.Get()>0));
+			//If only we had an encoder
 			SmartDashboard::PutNumber("encoder",encoder.Get());
 
 			//provide status on whether or not hooks can be moved
