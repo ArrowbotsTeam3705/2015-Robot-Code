@@ -143,16 +143,6 @@ public:
 		Wait(2.0); 				//    for 2 seconds
 		myRobot.Drive(0.0, 0.0); 	// stop robot
 	}
-
-	/**
-	 * Runs the motors with arcade steering.
-	 */
-	void forwardsPulley(){
-		forkLift.Set(0.75);
-	}
-	void backwardsPulley(){
-		forkLift.Set(-0.5);
-	}
 	void stopPulley(){
 		forkLift.Set(0);
 	}
