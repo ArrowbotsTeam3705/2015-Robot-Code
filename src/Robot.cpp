@@ -155,22 +155,6 @@ public:
 		myRobot.SetSafetyEnabled(true);
 		while (IsOperatorControl() && IsEnabled())
 		{
-			//tell the robot whether or not you have a tote when you press button 3 on the joystick                                                                                                                                                                                                      //veni,vidi,vici
-			if(forkLiftControl.GetRawButton(3)){
-				if(doesRobotHaveTote){
-					doesRobotHaveTote=false;
-					indicator.Set(Relay::kOff);
-					//reset the counter and make it stop updating
-					topCounter.Reset();
-				}else{
-					//tell the counter to start updating again
-					doesRobotHaveTote=true;
-				}
-			}
-			//if the robot has a tote and the top counter has been hit, then flash the indicator
-			if(doesRobotHaveTote&&(topCounter.Get()>0)){
-				indicator.Set(Relay::kForward);
-			}
 			//if inverted, then invert drive and if not inverted, then don't
 			if(inverted){
 				myRobot.ArcadeDrive(controller.GetY(),controller.GetZ());
@@ -192,6 +176,7 @@ public:
 			double forkLiftControlY=forkLiftControl.GetY();
 			if((forkLiftControlY>0.1)&&(topCounter.Get()==0)){
 				forkLift.Set(forkLiftControlY);
+				indicator.Set(Relay::kForward);
 				bottomCounter.Reset();
 			}
 			/*
@@ -200,6 +185,7 @@ public:
 			 */
 			else if((forkLiftControlY<-0.1)&&(bottomCounter.Get()==0)){
 				forkLift.Set(forkLiftControlY);
+				indicator.Set(Relay::kOff);
 				topCounter.Reset();
 			}
 			//when right stick of controller is left alone, motor will not exert force on pulley; thus, causing the pulley to drift downwards.
