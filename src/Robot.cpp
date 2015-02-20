@@ -138,10 +138,7 @@ public:
 	 */
 	void Autonomous()
 	{
-		myRobot.SetSafetyEnabled(false);
-		myRobot.Drive(-0.5, 0.0); 	// drive forwards half speed
-		Wait(2.0); 				//    for 2 seconds
-		myRobot.Drive(0.0, 0.0); 	// stop robot
+
 	}
 	void stopPulley(){
 		forkLift.Set(0);

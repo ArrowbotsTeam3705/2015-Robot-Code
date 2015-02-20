@@ -5,13 +5,13 @@ Team 3705 (the Arrowbots) operates out of Fletcher's Meadow Secondary School in 
 The code in this repository controls a robot that is designed to stack up to three totes.
 
 # Sensors used
-*2 Limit Switches
+* 2 Limit Switches
 
 # Actuators used
-*3 CIM Motors
-*1 Relay
-*3 Talon Motor Controllers
-*2 Single Solenoids
+* 3 CIM Motors
+* 1 Relay
+* 3 Talon Motor Controllers
+* 2 Single Solenoids
 
 # Interesting quirks
 	topCounter(&topSwitch),
@@ -26,4 +26,4 @@ Object: An instance of a class
 The license used is the MIT license and it is defined in the license.txt file.
 
 #About the Author
-My name is Javed Nissar and I am the only programmer for Team 3705 for the 2015 FRC season.
+My name is Javed Nissar and I am Team 3705's only programmer for the 2015 FRC season.
