@@ -98,6 +98,7 @@ class Robot: public SampleRobot
 	Timer pneumaticTimer;
 	//two limit switches that act as endpoints for the robot
 	DigitalInput topSwitch;
+	DigitalInput middleSwitch;
 	DigitalInput bottomSwitch;
 	//counters measuring the number of times the limit switch has been hit
 	Counter topCounter;
@@ -110,8 +111,8 @@ class Robot: public SampleRobot
 	double secondsForPneumatic;
 	//boolean controlling whether or not robot is inverted
 	bool inverted;
-	bool indicatorTest;
-	bool doesRobotHaveTote;
+	int count;
+	Timer poll;
 public:
 	Robot() :
 			myRobot(0, 1),	// these must be initialized in the same order
@@ -119,7 +120,8 @@ public:
 			forkLift(2),
 			leftHook(0),
 			rightHook(1),
-			topSwitch(2),
+			topSwitch(1),
+			middleSwitch(2),
 			bottomSwitch(0),
 			//limit switches must be passed to counter as pointers
 			topCounter(&topSwitch),
@@ -131,6 +133,8 @@ public:
 		myRobot.SetExpiration(0.1);
 		inverted=false;
 		secondsForPneumatic=0.5;
+		poll.Start();
+		count=0;
 	}
 
 	/**
@@ -169,8 +173,8 @@ public:
 					inverted=true;
 				}
 			}
-			//if the topCounter is being hit, then the forklift is in the correct position for initiating the locks
-			if(topCounter.Get()>0){
+			//if the middleCounter is being hit, then the forklift is in the correct position for initiating the locks
+			if(!middleSwitch.Get()){
 				indicator.Set(Relay::kForward);
 			}
 			//if the topCounter is not being hit, then the locks should not be initiated.
@@ -199,9 +203,9 @@ public:
 				stopPulley();
 			}
 			//states number of times the switch on top of the forklift has been activated
-			SmartDashboard::PutNumber("Top switch",topCounter.Get());
-			//SmartDashboard::PutBoolean("Does robot have a tote?",doesRobotHaveTote);
-			SmartDashboard::PutBoolean("Indicator",doesRobotHaveTote&&(topCounter.Get()>0));
+			SmartDashboard::PutNumber("Top counter",topCounter.Get());
+			SmartDashboard::PutNumber("Top switch",topSwitch.Get());
+			SmartDashboard::PutBoolean("Top counter stopped",topCounter.GetStopped());
 			//If only we had an encoder
 			SmartDashboard::PutNumber("encoder",encoder.Get());
 
@@ -209,8 +213,6 @@ public:
 			SmartDashboard::PutString("Can I press right trigger to move hooks",CanHooksBeMoved());
 			//provide status on whether or not controls are inverted
 			SmartDashboard::PutBoolean("inverted",inverted);
-			//tells you if a tote is currently on the robot
-			SmartDashboard::PutBoolean("Does robot have tote?",doesRobotHaveTote);
 			//if button 8 on the controller is pressed (the right trigger on Maninder's red controller) and the timer on the pneumatic is not active
 			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
 			if(controller.GetRawButton(8)&&!(pneumaticTimer.Get()>0)){
