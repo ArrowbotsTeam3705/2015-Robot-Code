@@ -169,6 +169,14 @@ public:
 					inverted=true;
 				}
 			}
+			//if the topCounter is being hit, then the forklift is in the correct position for initiating the locks
+			if(topCounter.Get()>0){
+				indicator.Set(Relay::kForward);
+			}
+			//if the topCounter is not being hit, then the locks should not be initiated.
+			else{
+				indicator.Set(Relay::kOff);
+			}
 			/*when you move the right stick of controller upwards and the top switch has not been triggered, the pulley will move upwards
 			 *the motor of the pulley will be at 75% forwards. The top switch must not be triggered in order to prevent any damage from being done to the robot.
 			 *the need for it to be above 0.1 is to accommodate the drift of the right stick of the controller (joystick value is never 0)
@@ -176,7 +184,6 @@ public:
 			double forkLiftControlY=forkLiftControl.GetY();
 			if((forkLiftControlY>0.1)&&(topCounter.Get()==0)){
 				forkLift.Set(forkLiftControlY);
-				indicator.Set(Relay::kForward);
 				bottomCounter.Reset();
 			}
 			/*
@@ -185,7 +192,6 @@ public:
 			 */
 			else if((forkLiftControlY<-0.1)&&(bottomCounter.Get()==0)){
 				forkLift.Set(forkLiftControlY);
-				indicator.Set(Relay::kOff);
 				topCounter.Reset();
 			}
 			//when right stick of controller is left alone, motor will not exert force on pulley; thus, causing the pulley to drift downwards.
