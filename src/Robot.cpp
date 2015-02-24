@@ -205,9 +205,9 @@ public:
 			SmartDashboard::PutBoolean("inverted",inverted);
 			//tells you if a tote is currently on the robot
 			SmartDashboard::PutBoolean("Does robot have tote?",doesRobotHaveTote);
-			//if button 8 on the controller is pressed (the right trigger on Maninder's red controller) and the timer on the pneumatic is not active
+			//if button 1 on the joystick is pressed (the trigger on the default FRC joystick) and the timer on the pneumatic is not active
 			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
-			if(controller.GetRawButton(8)&&!(pneumaticTimer.Get()>0)){
+			if(forkLiftControl.GetRawButton(1)&&!(pneumaticTimer.Get()>0)){
 				if(leftHook.Get()){
 					leftHook.Set(false);
 					rightHook.Set(false);	//moves left hook and right hook back to default position
