@@ -13,7 +13,7 @@ using std::string;
  * don't. Unless you know what you are doing, complex code will be much more difficult under
  * this system. Use IterativeRobot or Command-Based instead if you're new.
  */
-//Author Name:Javed Nissar and my partner in crime, 3K (Kavinda KK)
+//Author Name:Javed Nissar
 //Purpose:Classified
 //Date:February 13,2070
 /*
@@ -111,8 +111,6 @@ class Robot: public SampleRobot
 	double secondsForPneumatic;
 	//boolean controlling whether or not robot is inverted
 	bool inverted;
-	int count;
-	Timer poll;
 public:
 	Robot() :
 			myRobot(0, 1),	// these must be initialized in the same order
@@ -133,8 +131,6 @@ public:
 		myRobot.SetExpiration(0.1);
 		inverted=false;
 		secondsForPneumatic=0.5;
-		poll.Start();
-		count=0;
 	}
 
 	/**
@@ -213,11 +209,7 @@ public:
 			SmartDashboard::PutString("Can I press right trigger to move hooks",CanHooksBeMoved());
 			//provide status on whether or not controls are inverted
 			SmartDashboard::PutBoolean("inverted",inverted);
-			//tells you if a tote is currently on the robot
-			SmartDashboard::PutBoolean("Does robot have tote?",doesRobotHaveTote);
 			//if button 1 on the joystick is pressed (the trigger on the default FRC joystick) and the timer on the pneumatic is not active
-=======
-			//if button 8 on the controller is pressed (the right trigger on Maninder's red controller) and the timer on the pneumatic is not active
 			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
 			if(forkLiftControl.GetRawButton(1)&&!(pneumaticTimer.Get()>0)){
 				if(leftHook.Get()){
