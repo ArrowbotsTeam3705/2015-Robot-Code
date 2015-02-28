@@ -103,7 +103,8 @@ class Robot: public SampleRobot
 	//counters measuring the number of times the limit switch has been hit
 	Counter topCounter;
 	Counter bottomCounter;
-	Encoder encoder;
+	//encoder for driving the robot
+	Encoder driveEncoder;
 	Joystick forkLiftControl;                                                                                                                                                                          //Lol, Jesus does water tricks
 	Relay indicator;
 	//Jawad was here
@@ -124,13 +125,19 @@ public:
 			//limit switches must be passed to counter as pointers
 			topCounter(&topSwitch),
 			bottomCounter(&bottomSwitch),
-			encoder(7,8),
+			driveEncoder(7,8),
 			forkLiftControl(1),// as they are declared above.
 			indicator(0)
 	{
 		myRobot.SetExpiration(0.1);
 		inverted=false;
 		secondsForPneumatic=0.5;
+		//robot travels x feet in y revolutions with each revolution producing z pulses
+		//thus, the distance per pulse is (x/yz) feet/pulse
+		const int z=231;
+		const double y=10;
+		const double x=12;
+		driveEncoder.SetDistancePerPulse(x/(y*z));
 	}
 
 	/**
@@ -138,7 +145,14 @@ public:
 	 */
 	void Autonomous()
 	{
-
+		driveEncoder.Reset();
+		//targetDistance is the distance that the robot is supposed to travel in feet
+		const double targetDistance=13.583333;
+		while(IsAutonomous()&&IsEnabled()){
+			if(driveEncoder.GetDistance()<targetDistance){
+				myRobot.ArcadeDrive(0.5,0);
+			}
+		}
 	}
 	void stopPulley(){
 		forkLift.Set(0);
@@ -203,7 +217,7 @@ public:
 			SmartDashboard::PutNumber("Top switch",topSwitch.Get());
 			SmartDashboard::PutBoolean("Top counter stopped",topCounter.GetStopped());
 			//If only we had an encoder
-			SmartDashboard::PutNumber("encoder",encoder.Get());
+			SmartDashboard::PutNumber("encoder",driveEncoder.GetDistance());
 
 			//provide status on whether or not hooks can be moved
 			SmartDashboard::PutString("Can I press right trigger to move hooks",CanHooksBeMoved());
