@@ -217,15 +217,13 @@ public:
 			else{
 				stopPulley();
 			}
-			//states number of times the switch on top of the forklift has been activated
-			SmartDashboard::PutNumber("Top counter",topCounter.Get());
-			SmartDashboard::PutString("Is Tote In Correct Position?",YesOrNo(topSwitch.Get()));
-			//If only we had an encoder
-			SmartDashboard::PutNumber("Feet moved by robot",driveEncoder.GetDistance());
+			//state whether tote is in correct position based on the middle switch (which is connected to port 2)
+			SmartDashboard::PutString("Is Tote In Correct Position?",YesOrNo(middleSwitch.Get()));
+			SmartDashboard::PutNumber("Distance covered by robot (in feet)",driveEncoder.GetDistance());
 
 			//provide status on whether or not hooks can be moved
 			SmartDashboard::PutString("Can I press the trigger on the joystick to move hooks?",CanHooksBeMoved());
-			//provide status on whether or not controls are inverted
+			//states whether or not controls are inverted
 			SmartDashboard::PutString("Are the controls inverted?",YesOrNo(inverted));
 			//if button 1 on the joystick is pressed (the trigger on the default FRC joystick) and the timer on the pneumatic is not active
 			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
