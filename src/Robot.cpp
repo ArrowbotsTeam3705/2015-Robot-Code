@@ -177,10 +177,13 @@ public:
 			//if inverted, then invert drive and if not inverted, then don't
 			if(inverted){
 				myRobot.ArcadeDrive(controller.GetY()*0.5,controller.GetZ()*0.75);
+				//run motors at maximum of 50% to prevent jerkiness and ensure smooth driving
 			}else{
 				myRobot.ArcadeDrive(-controller.GetY()*0.5,-controller.GetZ()*0.75); // drive with arcade style (use left stick of controller) without squared inputs
 			}
-			//if button 13 on controller is pressed (the home button on Maninder's controller), make controller inverted if it is not inverted and not inverted if it is inverted
+			/*if button 13 on the controller is pressed (home button on the red controller used by team 3705),
+			 * make controller inverted if it is not inverted and not inverted if it is inverted
+			 */
 			if(controller.GetRawButton(13)){
 				if(inverted){
 					inverted=false;
@@ -188,7 +191,10 @@ public:
 					inverted=true;
 				}
 			}
-			//if the middleCounter is being hit, then the forklift is in the correct position for initiating the locks
+			/*if the middle switch is being hit, then the forklift is in the correct position for initiating the locks.
+			 *A not operation is performed on the output of the limit switch because the limit switch is wired as open by default;
+			 * hence, it returns a 1 when not hit and a 0 when hit
+			 */
 			if(!middleSwitch.Get()){
 				indicator.Set(Relay::kForward);
 			}
@@ -201,7 +207,7 @@ public:
 			 *the need for it to be above 0.1 is to accommodate the drift of the right stick of the controller (joystick value is never 0)
 			 */
 			double forkLiftControlY=forkLiftControl.GetY();
-			if((forkLiftControlY>0.1)&&(topCounter.Get()==0)){
+			if((forkLiftControlY>0.1)&&topSwitch.Get()){
 				forkLift.Set(forkLiftControlY);
 				bottomCounter.Reset();
 			}
@@ -209,7 +215,7 @@ public:
 			 * when you move right stick of controller downwards and the bottom switch has not been triggered, the pulley will move downwards
 			 * the motor of the pulley will be at 50% reverse. The bottom switch must not be triggered in order to prevent any damage from being done to the robot.
 			 */
-			else if((forkLiftControlY<-0.1)&&(bottomCounter.Get()==0)){
+			else if((forkLiftControlY<-0.1)&&bottomSwitch.Get()){
 				forkLift.Set(forkLiftControlY);
 				topCounter.Reset();
 			}
