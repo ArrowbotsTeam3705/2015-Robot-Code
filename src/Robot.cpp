@@ -112,6 +112,10 @@ class Robot: public SampleRobot
 	double secondsForPneumatic;
 	//boolean controlling whether or not robot is inverted
 	bool inverted;
+	//boolean stating whether forklift should be moved upwards
+	bool moveForkliftUp;
+	//boolean stating whether forklift should be moved downwards
+	bool moveForkliftDown;
 public:
 	Robot() :
 			myRobot(0, 1),	// these must be initialized in the same order
@@ -146,11 +150,27 @@ public:
 	void Autonomous()
 	{
 		driveEncoder.Reset();
+		moveForkliftUp=true;
+		moveForkliftDown=false;
+		rightHook.Set(false);
+		leftHook.Set(false);
 		//targetDistance is the distance that the robot is supposed to travel in feet
 		const double targetDistance=13.583333;
 		while(IsAutonomous()&&IsEnabled()){
 			if(driveEncoder.GetDistance()<targetDistance){
 				myRobot.ArcadeDrive(0.5,0);
+			}
+			if(moveForkliftUp){
+				forkLift.Set(0.3);
+				if(!middleSwitch.Get()){
+					moveForkliftDown=true;
+				}
+			}else if(moveForkliftDown){
+				forkLift.Set(-0.3);
+				if(!bottomSwitch.Get()){
+					forkLift.Set(0);
+					moveForkliftDown=false;
+				}
 			}
 			Wait(0.005);
 		}
