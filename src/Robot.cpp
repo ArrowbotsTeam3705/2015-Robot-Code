@@ -103,7 +103,8 @@ class Robot: public SampleRobot
 	//counters measuring the number of times the limit switch has been hit
 	Counter topCounter;
 	Counter bottomCounter;
-	Encoder encoder;
+	//encoder for driving the robot
+	Encoder driveEncoder;
 	Joystick forkLiftControl;                                                                                                                                                                          //Lol, Jesus does water tricks
 	Relay indicator;
 	//Jawad was here
@@ -124,13 +125,19 @@ public:
 			//limit switches must be passed to counter as pointers
 			topCounter(&topSwitch),
 			bottomCounter(&bottomSwitch),
-			encoder(7,8),
+			driveEncoder(7,8),
 			forkLiftControl(1),// as they are declared above.
 			indicator(0)
 	{
 		myRobot.SetExpiration(0.1);
 		inverted=false;
 		secondsForPneumatic=0.5;
+		//robot travels x feet in y revolutions with each revolution producing z pulses
+		//thus, the distance per pulse is (x/yz) feet/pulse
+		const int z=231;
+		const double y=10;
+		const double x=12;
+		driveEncoder.SetDistancePerPulse(x/(y*z));
 	}
 
 	/**
@@ -138,21 +145,33 @@ public:
 	 */
 	void Autonomous()
 	{
-
+		driveEncoder.Reset();
+		//targetDistance is the distance that the robot is supposed to travel in feet
+		const double targetDistance=13.583333;
+		while(IsAutonomous()&&IsEnabled()){
+			if(driveEncoder.GetDistance()<targetDistance){
+				myRobot.ArcadeDrive(0.5,0);
+			}
+			Wait(0.005);
+		}
 	}
 	void stopPulley(){
 		forkLift.Set(0);
 	}
-	string CanHooksBeMoved(){
-		if(pneumaticTimer.Get()>0){
-			return "No";
-		}else{
+	string YesOrNo(bool value){
+		if(value){
 			return "Yes";
+		}else{
+			return "No";
 		}
+	}
+	string CanHooksBeMoved(){
+		return YesOrNo(pneumaticTimer.Get()>0);
 	}
 	void OperatorControl()
 	{
 		myRobot.SetSafetyEnabled(true);
+		driveEncoder.Reset();
 		while (IsOperatorControl() && IsEnabled())
 		{
 			//if inverted, then invert drive and if not inverted, then don't
@@ -204,17 +223,14 @@ public:
 			else{
 				stopPulley();
 			}
-			//states number of times the switch on top of the forklift has been activated
-			SmartDashboard::PutNumber("Top counter",topCounter.Get());
-			SmartDashboard::PutNumber("Top switch",topSwitch.Get());
-			SmartDashboard::PutBoolean("Top counter stopped",topCounter.GetStopped());
-			//If only we had an encoder
-			SmartDashboard::PutNumber("encoder",encoder.Get());
+			//state whether tote is in correct position based on the middle switch (which is connected to port 2)
+			SmartDashboard::PutString("Is Tote In Correct Position?",YesOrNo(middleSwitch.Get()));
+			SmartDashboard::PutNumber("Distance covered by robot (in feet)",driveEncoder.GetDistance());
 
 			//provide status on whether or not hooks can be moved
-			SmartDashboard::PutString("Can I press right trigger to move hooks",CanHooksBeMoved());
-			//provide status on whether or not controls are inverted
-			SmartDashboard::PutBoolean("inverted",inverted);
+			SmartDashboard::PutString("Can I press the trigger on the joystick to move hooks?",CanHooksBeMoved());
+			//states whether or not controls are inverted
+			SmartDashboard::PutString("Are the controls inverted?",YesOrNo(inverted));
 			//if button 1 on the joystick is pressed (the trigger on the default FRC joystick) and the timer on the pneumatic is not active
 			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
 			if(forkLiftControl.GetRawButton(1)&&!(pneumaticTimer.Get()>0)){
