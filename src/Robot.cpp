@@ -207,7 +207,7 @@ public:
 			 *the need for it to be above 0.1 is to accommodate the drift of the right stick of the controller (joystick value is never 0)
 			 */
 			double forkLiftControlY=forkLiftControl.GetY();
-			if((forkLiftControlY>0.1)&&(topCounter.Get()==0)){
+			if((forkLiftControlY>0.1)&&topSwitch.Get()){
 				forkLift.Set(forkLiftControlY);
 				bottomCounter.Reset();
 			}
@@ -215,7 +215,7 @@ public:
 			 * when you move right stick of controller downwards and the bottom switch has not been triggered, the pulley will move downwards
 			 * the motor of the pulley will be at 50% reverse. The bottom switch must not be triggered in order to prevent any damage from being done to the robot.
 			 */
-			else if((forkLiftControlY<-0.1)&&(bottomCounter.Get()==0)){
+			else if((forkLiftControlY<-0.1)&&bottomSwitch.Get()){
 				forkLift.Set(forkLiftControlY);
 				topCounter.Reset();
 			}
