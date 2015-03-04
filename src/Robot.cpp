@@ -157,11 +157,14 @@ public:
 		{
 			//if inverted, then invert drive and if not inverted, then don't
 			if(inverted){
-				myRobot.ArcadeDrive(controller.GetY(),controller.GetZ());
+				//run motors at maximum of 50% to prevent jerkiness and ensure smooth driving
+				myRobot.ArcadeDrive(controller.GetY()*0.5,controller.GetZ()*0.5);
 			}else{
-				myRobot.ArcadeDrive(-controller.GetY(),-controller.GetZ()); // drive with arcade style (use left stick of controller) without squared inputs
+				myRobot.ArcadeDrive(-controller.GetY()*0.5,-controller.GetZ()*0.5); // drive with arcade style (use left stick of controller) without squared inputs
 			}
-			//if button 7 on controller is pressed (left trigger on Maninder's controller), make controller inverted if it is not inverted and not inverted if it is inverted
+			/*if button 13 on the controller is pressed (home button on the red controller used by team 3705),
+			 * make controller inverted if it is not inverted and not inverted if it is inverted
+			 */
 			if(controller.GetRawButton(13)){
 				if(inverted){
 					inverted=false;
@@ -169,7 +172,10 @@ public:
 					inverted=true;
 				}
 			}
-			//if the middleCounter is being hit, then the forklift is in the correct position for initiating the locks
+			/*if the middle switch is being hit, then the forklift is in the correct position for initiating the locks.
+			 *A not operation is performed on the output of the limit switch because the limit switch is wired as open by default;
+			 * hence, it returns a 1 when not hit and a 0 when hit
+			 */
 			if(!middleSwitch.Get()){
 				indicator.Set(Relay::kForward);
 			}
