@@ -13,7 +13,7 @@ using std::string;
  * don't. Unless you know what you are doing, complex code will be much more difficult under
  * this system. Use IterativeRobot or Command-Based instead if you're new.
  */
-//Author Name:Javed Nissar and my partner in crime, 3K (Kavinda KK)
+//Author Name:Javed Nissar
 //Purpose:Classified
 //Date:February 13,2070
 /*
@@ -98,11 +98,13 @@ class Robot: public SampleRobot
 	Timer pneumaticTimer;
 	//two limit switches that act as endpoints for the robot
 	DigitalInput topSwitch;
+	DigitalInput middleSwitch;
 	DigitalInput bottomSwitch;
 	//counters measuring the number of times the limit switch has been hit
 	Counter topCounter;
 	Counter bottomCounter;
-	Encoder encoder;
+	//encoder for driving the robot
+	Encoder driveEncoder;
 	Joystick forkLiftControl;                                                                                                                                                                          //Lol, Jesus does water tricks
 	Relay indicator;
 	//Jawad was here
@@ -110,8 +112,6 @@ class Robot: public SampleRobot
 	double secondsForPneumatic;
 	//boolean controlling whether or not robot is inverted
 	bool inverted;
-	bool indicatorTest;
-	bool doesRobotHaveTote;
 public:
 	Robot() :
 			myRobot(0, 1),	// these must be initialized in the same order
@@ -119,18 +119,25 @@ public:
 			forkLift(2),
 			leftHook(0),
 			rightHook(1),
-			topSwitch(2),
+			topSwitch(1),
+			middleSwitch(2),
 			bottomSwitch(0),
 			//limit switches must be passed to counter as pointers
 			topCounter(&topSwitch),
 			bottomCounter(&bottomSwitch),
-			encoder(7,8),
+			driveEncoder(7,8),
 			forkLiftControl(1),// as they are declared above.
 			indicator(0)
 	{
 		myRobot.SetExpiration(0.1);
 		inverted=false;
 		secondsForPneumatic=0.5;
+		//robot travels x feet in y revolutions with each revolution producing z pulses
+		//thus, the distance per pulse is (x/yz) feet/pulse
+		const int z=231;
+		const double y=10;
+		const double x=12;
+		driveEncoder.SetDistancePerPulse(x/(y*z));
 	}
 
 	/**
@@ -138,30 +145,45 @@ public:
 	 */
 	void Autonomous()
 	{
-
+		driveEncoder.Reset();
+		//targetDistance is the distance that the robot is supposed to travel in feet
+		const double targetDistance=13.583333;
+		while(IsAutonomous()&&IsEnabled()){
+			if(driveEncoder.GetDistance()<targetDistance){
+				myRobot.ArcadeDrive(0.5,0);
+			}
+			Wait(0.005);
+		}
 	}
 	void stopPulley(){
 		forkLift.Set(0);
 	}
-	string CanHooksBeMoved(){
-		if(pneumaticTimer.Get()>0){
-			return "No";
-		}else{
+	string YesOrNo(bool value){
+		if(value){
 			return "Yes";
+		}else{
+			return "No";
 		}
+	}
+	string CanHooksBeMoved(){
+		return YesOrNo(pneumaticTimer.Get()>0);
 	}
 	void OperatorControl()
 	{
 		myRobot.SetSafetyEnabled(true);
+		driveEncoder.Reset();
 		while (IsOperatorControl() && IsEnabled())
 		{
 			//if inverted, then invert drive and if not inverted, then don't
 			if(inverted){
-				myRobot.ArcadeDrive(controller.GetY(),controller.GetZ());
+				myRobot.ArcadeDrive(controller.GetY()*0.5,controller.GetZ()*0.75);
+				//run motors at maximum of 50% to prevent jerkiness and ensure smooth driving
 			}else{
-				myRobot.ArcadeDrive(-controller.GetY(),-controller.GetZ()); // drive with arcade style (use left stick of controller) without squared inputs
+				myRobot.ArcadeDrive(-controller.GetY()*0.5,-controller.GetZ()*0.75); // drive with arcade style (use left stick of controller) without squared inputs
 			}
-			//if button 7 on controller is pressed (left trigger on Maninder's controller), make controller inverted if it is not inverted and not inverted if it is inverted
+			/*if button 13 on the controller is pressed (home button on the red controller used by team 3705),
+			 * make controller inverted if it is not inverted and not inverted if it is inverted
+			 */
 			if(controller.GetRawButton(13)){
 				if(inverted){
 					inverted=false;
@@ -169,8 +191,11 @@ public:
 					inverted=true;
 				}
 			}
-			//if the topCounter is being hit, then the forklift is in the correct position for initiating the locks
-			if(topCounter.Get()>0){
+			/*if the middle switch is being hit, then the forklift is in the correct position for initiating the locks.
+			 *A not operation is performed on the output of the limit switch because the limit switch is wired as open by default;
+			 * hence, it returns a 1 when not hit and a 0 when hit
+			 */
+			if(!middleSwitch.Get()){
 				indicator.Set(Relay::kForward);
 			}
 			//if the topCounter is not being hit, then the locks should not be initiated.
@@ -182,7 +207,7 @@ public:
 			 *the need for it to be above 0.1 is to accommodate the drift of the right stick of the controller (joystick value is never 0)
 			 */
 			double forkLiftControlY=forkLiftControl.GetY();
-			if((forkLiftControlY>0.1)&&(topCounter.Get()==0)){
+			if((forkLiftControlY>0.1)&&topSwitch.Get()){
 				forkLift.Set(forkLiftControlY);
 				bottomCounter.Reset();
 			}
@@ -190,7 +215,7 @@ public:
 			 * when you move right stick of controller downwards and the bottom switch has not been triggered, the pulley will move downwards
 			 * the motor of the pulley will be at 50% reverse. The bottom switch must not be triggered in order to prevent any damage from being done to the robot.
 			 */
-			else if((forkLiftControlY<-0.1)&&(bottomCounter.Get()==0)){
+			else if((forkLiftControlY<-0.1)&&bottomSwitch.Get()){
 				forkLift.Set(forkLiftControlY);
 				topCounter.Reset();
 			}
@@ -198,22 +223,17 @@ public:
 			else{
 				stopPulley();
 			}
-			//states number of times the switch on top of the forklift has been activated
-			SmartDashboard::PutNumber("Top switch",topCounter.Get());
-			//SmartDashboard::PutBoolean("Does robot have a tote?",doesRobotHaveTote);
-			SmartDashboard::PutBoolean("Indicator",doesRobotHaveTote&&(topCounter.Get()>0));
-			//If only we had an encoder
-			SmartDashboard::PutNumber("encoder",encoder.Get());
+			//state whether tote is in correct position based on the middle switch (which is connected to port 2)
+			SmartDashboard::PutString("Is Tote In Correct Position?",YesOrNo(middleSwitch.Get()));
+			SmartDashboard::PutNumber("Distance covered by robot (in feet)",driveEncoder.GetDistance());
 
 			//provide status on whether or not hooks can be moved
-			SmartDashboard::PutString("Can I press right trigger to move hooks",CanHooksBeMoved());
-			//provide status on whether or not controls are inverted
-			SmartDashboard::PutBoolean("inverted",inverted);
-			//tells you if a tote is currently on the robot
-			SmartDashboard::PutBoolean("Does robot have tote?",doesRobotHaveTote);
-			//if button 8 on the controller is pressed (the right trigger on Maninder's red controller) and the timer on the pneumatic is not active
+			SmartDashboard::PutString("Can I press the trigger on the joystick to move hooks?",CanHooksBeMoved());
+			//states whether or not controls are inverted
+			SmartDashboard::PutString("Are the controls inverted?",YesOrNo(inverted));
+			//if button 1 on the joystick is pressed (the trigger on the default FRC joystick) and the timer on the pneumatic is not active
 			//this is meant to prevent the hooks from bouncing by ensuring that the button input is not taken at all times
-			if(controller.GetRawButton(8)&&!(pneumaticTimer.Get()>0)){
+			if(forkLiftControl.GetRawButton(1)&&!(pneumaticTimer.Get()>0)){
 				if(leftHook.Get()){
 					leftHook.Set(false);
 					rightHook.Set(false);	//moves left hook and right hook back to default position
