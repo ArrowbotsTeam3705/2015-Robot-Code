@@ -176,11 +176,11 @@ public:
 		{
 			//if inverted, then invert drive and if not inverted, then don't
 			if(inverted){
-				myRobot.ArcadeDrive(controller.GetY(),controller.GetZ());
+				myRobot.ArcadeDrive(controller.GetY()*0.5,controller.GetZ()*0.75);
 			}else{
-				myRobot.ArcadeDrive(-controller.GetY(),-controller.GetZ()); // drive with arcade style (use left stick of controller) without squared inputs
+				myRobot.ArcadeDrive(-controller.GetY()*0.5,-controller.GetZ()*0.75); // drive with arcade style (use left stick of controller) without squared inputs
 			}
-			//if button 7 on controller is pressed (left trigger on Maninder's controller), make controller inverted if it is not inverted and not inverted if it is inverted
+			//if button 13 on controller is pressed (the home button on Maninder's controller), make controller inverted if it is not inverted and not inverted if it is inverted
 			if(controller.GetRawButton(13)){
 				if(inverted){
 					inverted=false;
