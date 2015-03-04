@@ -176,10 +176,10 @@ public:
 		{
 			//if inverted, then invert drive and if not inverted, then don't
 			if(inverted){
+				myRobot.ArcadeDrive(controller.GetY()*0.5,controller.GetZ()*0.75);
 				//run motors at maximum of 50% to prevent jerkiness and ensure smooth driving
-				myRobot.ArcadeDrive(controller.GetY()*0.5,controller.GetZ()*0.5);
 			}else{
-				myRobot.ArcadeDrive(-controller.GetY()*0.5,-controller.GetZ()*0.5); // drive with arcade style (use left stick of controller) without squared inputs
+				myRobot.ArcadeDrive(-controller.GetY()*0.5,-controller.GetZ()*0.75); // drive with arcade style (use left stick of controller) without squared inputs
 			}
 			/*if button 13 on the controller is pressed (home button on the red controller used by team 3705),
 			 * make controller inverted if it is not inverted and not inverted if it is inverted
